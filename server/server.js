@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 
 // mongoose and model imports
 const {mongoose} = require('./db/mongoose');
+const {ObjectID} = require('mongodb');
 let {Todo} = require('./models/Todo');
 let {User} = require('./models/User');
 
@@ -26,6 +27,19 @@ app.post('/todos', (req, res) => {
 app.get('/todos', (req, res) => {
     Todo.find().then((todos) => {
         res.send({todos})
+    }, (err) => {
+        res.status(400).send(err);
+    })
+})
+
+app.get('/todos/:id', (req, res) => {
+    const id = req.params.id;
+    if (!ObjectID.isValid(id)) {
+        return res.status(500).send('Object id not valid');
+    }
+    Todo.findById(id).then((todo) => {
+        if (!todo) return res.status(404).send('Id not found');
+        res.send({todo})
     }, (err) => {
         res.status(400).send(err);
     })
