@@ -110,5 +110,41 @@ describe('routes', () => {
         });
     });
 
+    describe('Delete routes', () => {
+        it('Should delete a route by id', (done) => {
+            Todo.find().then((todos) => {
+                expect(todos.length).toBe(2);
+                id = todos[0]._id;
+                request(app).
+                    delete(`/todos/${id}`).
+                    expect(200).
+                    expect((res) => {
+                        expect(res.body.todo.text).toBe('First test todo')
+                    }).
+                    end((err, res) => {
+                        if (err) return done(err);
+                        Todo.findById(id).then((doc) => {
+                            expect(doc).toBe(null);
+                            done();
+                        }).catch((err) => done(err))
+                    });
+            });
+        });
 
+        it('Should return 500 for an invalid id', (done) => {
+            let id = 'dsds';
+            request(app).
+                delete(`/todos/${id}`).
+                expect(500).
+                end(done);
+        });
+
+        it('Should return 404 when document has already been deleted', (done) =>{
+            let id = '591d23bef837add63c045548';
+            request(app).
+            get(`/todos/${id}`).
+            expect(404).
+            end(done);
+        })
+    });
 })

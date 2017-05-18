@@ -30,7 +30,7 @@ app.get('/todos', (req, res) => {
     }, (err) => {
         res.status(400).send(err);
     })
-})
+});
 
 app.get('/todos/:id', (req, res) => {
     const id = req.params.id;
@@ -43,7 +43,21 @@ app.get('/todos/:id', (req, res) => {
     }, (err) => {
         res.status(400).send(err);
     })
-})
+});
+
+app.delete('/todos/:id', (req, res) => {
+   let id = req.params.id;
+    if (!ObjectID.isValid(id)) {
+        return res.status(500).send('Id not found')
+    }
+
+    Todo.findByIdAndRemove(id).then((todo) => {
+        if (!todo) return res.status(404).send('No document to remove');
+        res.send({todo});
+    }, (err) => {
+        res.status(400).send(err);
+    })
+});
 
 app.listen('3000', () => {
     console.log('App is listening on port 3000!');
