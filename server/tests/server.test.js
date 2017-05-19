@@ -7,7 +7,9 @@ const {Todo} = require('../models/Todo');
 const todos = [{
     text: 'First test todo'
 }, {
-    text: 'Second test todo'
+    text: 'Second test todo',
+    completed: true,
+    completedAt: 123
 }]
 
 beforeEach((done) => {
@@ -147,4 +149,29 @@ describe('routes', () => {
             end(done);
         })
     });
+
+    describe('Patch routes', () => {
+        it('Should update a todo for a given id', (done) => {
+            Todo.findOne({completed: true}).then((todo) => {
+                if (!todo) return done('No todo found');
+                let id = todo._id;
+                request(app).
+                    patch(`/todos/${id}`).
+                    send({completed: false}).
+                    expect(200).
+                    expect((res) => {
+                        expect(res.body.todo.completed).toBe(false);
+                        expect(res.body.todo.completedAt).toBe(null);
+                    }).
+                    end((err, res) => {
+                        if (err) return done(err);
+                        Todo.findById(res.body.todo._id).then((doc) => {
+                            expect(doc.completedAt).toBe(null);
+                            expect(doc.completed).toBe(false);
+                            done();
+                        }).catch((err) => done(err))
+                    })
+            }).catch((err) => done(err))
+        })
+    })
 })
