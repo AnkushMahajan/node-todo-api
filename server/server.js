@@ -3,6 +3,7 @@ require('./config/config');
 // Express imports
 const express = require('express');
 const bodyParser = require('body-parser');
+const {authenticate} = require('./middleware/authenticate');
 
 const _ = require('lodash');
 
@@ -95,7 +96,6 @@ app.patch('/todos/:id', (req, res) => {
 
 // User requests
 app.post('/users', (req, res) => {
-    console.log('Hello');
     let body = _.pick(req.body, ['email', 'password']);
     let user = new User(body);
 
@@ -106,7 +106,13 @@ app.post('/users', (req, res) => {
     }).catch((err) => {
         res.status(400).send(err);
     })
-})
+});
+
+
+
+app.get('/users/me', authenticate,  (req, res) => {
+    res.send(req.user)
+});
 
 app.listen('3000', () => {
     console.log('App is listening on port 3000!');
