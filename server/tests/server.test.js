@@ -3,22 +3,13 @@ const request = require('supertest');
 
 const {app} = require('../server');
 const {Todo} = require('../models/Todo');
+const {User} = require('../models/User');
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed')
 
-const todos = [{
-    text: 'First test todo'
-}, {
-    text: 'Second test todo',
-    completed: true,
-    completedAt: 123
-}]
 
-beforeEach((done) => {
-    Todo.remove({}).then(() => {
-        return Todo.insertMany(todos)
-    }).then(() => {
-        done();
-    })
-})
+
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('routes', () => {
     describe('Post requests', () => {
@@ -174,4 +165,68 @@ describe('routes', () => {
             }).catch((err) => done(err))
         })
     })
+
+    describe('Get Users', () => {
+        it('Should get user when token is passed in', (done) => {
+            request(app).
+                get('/users/me').
+                set('x-auth', users[0].tokens[0].token).
+                expect(200).
+                expect((res) => {
+                    expect(res.body.id).toBe(users[0]._id.toHexString());
+                    expect(res.body.email).toBe(users[0].email);
+                }).end(done);
+        });
+
+        it('Should return 401 when no token is passed in', (done) => {
+            request(app).
+                get('/users/me').
+                expect(401).
+                    expect((res) => {
+                        expect(res.body).toEqual({});
+                }).end(done);
+        });
+    });
+
+    describe('Post Users', () => {
+       it('should post a user and return auth token', (done) => {
+            let userBody = {email: 'amahajan3@gmail.com', password: 'hello12345'};
+            request(app).
+                post('/users').
+                send(userBody).
+                expect(200).
+                    expect((res) => {
+                        expect(res.body.email).toBe('amahajan3@gmail.com');
+                        expect(res.headers['x-auth']).toExist();
+                }).end((err, res) => {
+                    if(err) done(err);
+                    User.findById(res.body.id).then((user) => {
+                        expect(user.email).toBe('amahajan3@gmail.com');
+                        expect(user.password).toNotBe('')
+                        done();
+                    }).catch((err) => done(err));
+                });
+       });
+
+       it('should return validation errors if request invalid', (done) => {
+           request(app).
+           post('/users').
+           send({email:'amahajan@gmail.com', password: 'abc'}).
+           expect(400).
+           expect((res) => {
+                expect(res.body.errors).toExist();
+           }).end(done);
+       });
+
+       it('should not create a user if email already in use', (done) => {
+           request(app).
+           post('/users').
+           send({email: 'ankush@gmail.com', password:'sdsdsdsds'}).
+           expect(400).
+           expect((res) => {
+            expect(res.body.errmsg).toExist();
+
+           }).end(done);
+       })
+    });
 })
